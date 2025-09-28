@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GraphQL Product Manager</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    section { margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #ddd; }
+    label { display: block; margin: 6px 0 2px; }
+    input, button { padding: 8px; margin-right: 6px; }
+    pre { background: #f7f7f7; padding: 12px; overflow: auto; }
+  </style>
+  <script>
+    const GQL_ENDPOINT = '/graphql';
+
+    async function gql(query, variables = {}) {
+      const res = await fetch(GQL_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, variables })
+      });
+      const data = await res.json();
+      if (data.errors) throw new Error(JSON.stringify(data.errors));
+      return data.data;
+    }
+
+    async function loadProductsByPrice() {
+      const query = `query { productsByPriceAsc { id title price } }`;
+      try {
+        const data = await gql(query);
+        document.getElementById('productsByPrice').textContent = JSON.stringify(data.productsByPriceAsc, null, 2);
+      } catch (e) { alert(e); }
+    }
+
+    async function loadProductsByCategory() {
+      const categoryId = document.getElementById('categoryId').value;
+      const query = `query($cid: ID!){ productsByCategory(categoryId: $cid){ id title price } }`;
+      try {
+        const data = await gql(query, { cid: categoryId });
+        document.getElementById('productsByCategory').textContent = JSON.stringify(data.productsByCategory, null, 2);
+      } catch (e) { alert(e); }
+    }
+
+    async function doLogin() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const mutation = `mutation($email:String!,$password:String!){ login(email:$email,password:$password){ id fullname email phone } }`;
+      try {
+        const data = await gql(mutation, { email, password });
+        document.getElementById('loginResult').textContent = JSON.stringify(data.login, null, 2);
+      } catch (e) { alert('Đăng nhập thất bại: ' + e.message); }
+    }
+
+    async function createUser() {
+      const fullname = document.getElementById('u_fullname').value;
+      const email = document.getElementById('u_email').value;
+      const password = document.getElementById('u_password').value;
+      const phone = document.getElementById('u_phone').value;
+      const mutation = `mutation($input:UserInput!){ createUser(input:$input){ id fullname email phone } }`;
+      try {
+        const data = await gql(mutation, { input: { fullname, email, password, phone } });
+        document.getElementById('userCrud').textContent = JSON.stringify(data.createUser, null, 2);
+      } catch (e) { alert(e); }
+    }
+
+    async function createCategory() {
+      const name = document.getElementById('c_name').value;
+      const images = document.getElementById('c_images').value;
+      const mutation = `mutation($input:CategoryInput!){ createCategory(input:$input){ id name images } }`;
+      try {
+        const data = await gql(mutation, { input: { name, images } });
+        document.getElementById('categoryCrud').textContent = JSON.stringify(data.createCategory, null, 2);
+      } catch (e) { alert(e); }
+    }
+
+    async function createProduct() {
+      const title = document.getElementById('p_title').value;
+      const quantity = parseInt(document.getElementById('p_quantity').value || '0', 10);
+      const desc = document.getElementById('p_desc').value;
+      const price = parseFloat(document.getElementById('p_price').value);
+      const userId = document.getElementById('p_userId').value ? parseInt(document.getElementById('p_userId').value, 10) : null;
+      const categoryIds = document.getElementById('p_categoryIds').value.split(',').map(s => s.trim()).filter(Boolean).map(Number);
+      const mutation = `mutation($input:ProductInput!){ createProduct(input:$input){ id title price } }`;
+      try {
+        const data = await gql(mutation, { input: { title, quantity, desc, price, userId, categoryIds } });
+        document.getElementById('productCrud').textContent = JSON.stringify(data.createProduct, null, 2);
+      } catch (e) { alert(e); }
+    }
+  </script>
+</head>
+<body>
+  <h1>GraphQL Product Manager</h1>
+
+  <section>
+    <h2>Query: Products sort by price</h2>
+    <button onclick="loadProductsByPrice()">Load productsByPriceAsc</button>
+    <pre id="productsByPrice"></pre>
+  </section>
+
+  <section>
+    <h2>Query: Products by category</h2>
+    <label>Category ID</label>
+    <input id="categoryId" type="number" placeholder="e.g. 1" />
+    <button onclick="loadProductsByCategory()">Load productsByCategory</button>
+    <pre id="productsByCategory"></pre>
+  </section>
+
+  <section>
+    <h2>Login</h2>
+    <label>Email</label>
+    <input id="email" type="email" placeholder="email@example.com" />
+    <label>Password</label>
+    <input id="password" type="password" placeholder="password" />
+    <button onclick="doLogin()">Login</button>
+    <pre id="loginResult"></pre>
+  </section>
+
+  <section>
+    <h2>CRUD User</h2>
+    <label>Fullname</label>
+    <input id="u_fullname" />
+    <label>Email</label>
+    <input id="u_email" type="email" />
+    <label>Password</label>
+    <input id="u_password" type="password" />
+    <label>Phone</label>
+    <input id="u_phone" />
+    <button onclick="createUser()">Create User</button>
+    <pre id="userCrud"></pre>
+  </section>
+
+  <section>
+    <h2>CRUD Category</h2>
+    <label>Name</label>
+    <input id="c_name" />
+    <label>Images</label>
+    <input id="c_images" />
+    <button onclick="createCategory()">Create Category</button>
+    <pre id="categoryCrud"></pre>
+  </section>
+
+  <section>
+    <h2>CRUD Product</h2>
+    <label>Title</label>
+    <input id="p_title" />
+    <label>Quantity</label>
+    <input id="p_quantity" type="number" />
+    <label>Description</label>
+    <input id="p_desc" />
+    <label>Price</label>
+    <input id="p_price" type="number" step="0.01" />
+    <label>User ID</label>
+    <input id="p_userId" type="number" />
+    <label>Category IDs (comma separated)</label>
+    <input id="p_categoryIds" placeholder="e.g. 1,2" />
+    <button onclick="createProduct()">Create Product</button>
+    <pre id="productCrud"></pre>
+  </section>
+
+</body>
+</html>
+
+

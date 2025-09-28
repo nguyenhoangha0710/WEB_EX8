@@ -1,0 +1,88 @@
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+type User {
+  id: ID!
+  fullname: String!
+  email: String!
+  phone: String
+  products: [Product!]
+  categories: [Category!]
+}
+
+type Product {
+  id: ID!
+  title: String!
+  quantity: Int
+  desc: String
+  price: Float!
+  user: User
+  categories: [Category!]
+}
+
+type Category {
+  id: ID!
+  name: String!
+  images: String
+  users: [User!]
+  products: [Product!]
+}
+
+input UserInput {
+  fullname: String!
+  email: String!
+  password: String!
+  phone: String
+}
+
+input CategoryInput {
+  name: String!
+  images: String
+}
+
+input ProductInput {
+  title: String!
+  quantity: Int
+  desc: String
+  price: Float!
+  userId: ID
+  categoryIds: [ID!]
+}
+
+type LoginResponse {
+  id: ID!
+  fullname: String!
+  email: String!
+  phone: String
+}
+
+type Query {
+  users: [User!]
+  user(id: ID!): User
+  categories: [Category!]
+  category(id: ID!): Category
+  products: [Product!]
+  product(id: ID!): Product
+  productsByPriceAsc: [Product!]
+  productsByCategory(categoryId: ID!): [Product!]
+}
+
+type Mutation {
+  createUser(input: UserInput!): User!
+  updateUser(id: ID!, input: UserInput!): User!
+  deleteUser(id: ID!): Boolean!
+
+  createCategory(input: CategoryInput!): Category!
+  updateCategory(id: ID!, input: CategoryInput!): Category!
+  deleteCategory(id: ID!): Boolean!
+
+  createProduct(input: ProductInput!): Product!
+  updateProduct(id: ID!, input: ProductInput!): Product!
+  deleteProduct(id: ID!): Boolean!
+
+  login(email: String!, password: String!): LoginResponse!
+}
+
+
